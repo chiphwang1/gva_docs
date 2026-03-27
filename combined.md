@@ -163,7 +163,7 @@ Each entry in `secondaryVnics` contains `createVnicDetails` with fields such as:
 | `definedTags` | No | Standard OCI defined tags |
 | `freeformTags` | No | Standard OCI freeform tags |
 | `skipSourceDestCheck` | No | Enable only for routing or NAT cases |
-| `nicIndex` | No | Leave unset unless there is a specific placement need |
+| `nicIndex` | No | Selects the physical NIC used by the VNIC attachment. This can be useful on bare metal shapes when customers want to maximize throughput, because some shapes spread total bandwidth across multiple physical NICs, for example `100 Gbps` across two `50 Gbps` NICs |
 
 ## 7. Example: Application Resource-Based Isolation
 
