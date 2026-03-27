@@ -4,21 +4,20 @@
 
 Generic VNIC Attachment (GVA) is an OKE networking capability for VCN-Native pod networking that lets a node pool attach multiple secondary VNIC profiles with different subnet, NSG, and IP allocation settings.
 
-GVA is not currently supported with Flannel.
+**Important:** GVA is not currently supported with Flannel.
 
 GVA is most useful when you need:
 
 - Pod traffic isolation by subnet or NSG
 - Different routing or security controls for different workload classes
-- More control over how many IP addresses are assigned to pod networking on each worker node
-- With GVA, the worker node pod limit can be pushed from the default model up to 256 by assigning up to 256 pod IPs across all configured GVA VNIC profiles on the node
+- More control over how many IP addresses are assigned to pod networking on each worker node. With GVA, the worker node pod limit can be pushed up to 256 by assigning up to 256 pod IPs across all configured GVA VNIC profiles on the node
 - Multiple node interfaces available for multi-interface pod designs
 
 ## 2. Decision Guide
 
 Choose the design first, because the configuration model is different depending on whether the pod needs one network path or multiple interfaces.
 
-Application Resource is a selector assigned to a secondary VNIC profile. Pods can request it directly in the pod-level scheduling model, and NAD `deviceSelector` can reference it in multi-interface designs.
+Section 4 defines Application Resource in detail. In this decision guide, treat it as the selector used when a workload must target one specific secondary VNIC profile.
 
 ### 2.1 Single-Interface Workloads
 
@@ -29,15 +28,14 @@ Section 2.1 covers two single-interface patterns:
 
 Use Application Resources when a node pool exposes multiple selectable secondary VNIC profiles and a pod should run on exactly one selected profile enforced by scheduling. Application Resources are mainly needed when multiple secondary VNIC profiles are attached to the same node and workloads must be pinned to one selected profile. Each pod can request only one Application Resource when using the pod-level scheduling model.
 
-If the use case does not require multiple secondary VNIC profiles, such as using a single secondary VNIC to increase pod IP capacity on a worker node or to control how many IP addresses are assigned to pod networking on that node, Application Resources are not required. In this model, pod IP capacity is sized through one GVA VNIC profile and can use the current full 256-IP GVA budget on that node.
+If the use case is a single secondary VNIC used only to increase pod IP capacity or control per-node pod IP allocation, Application Resources are not required. In that model, pod IP capacity is sized through one GVA VNIC profile and can use the current full 256-IP GVA budget on that node.
 
 Design notes for single-interface workloads:
 
 - GVA gives operators more control over how many IP addresses are assigned to pod networking on each worker node by sizing `ipCount` per secondary VNIC profile
 - Application Resources are for selecting one profile from multiple secondary VNIC profiles on a node
 - A common single-path design is one secondary VNIC with one pod interface, used to raise per-node pod IP capacity by assigning the current 256-IP GVA budget to one VNIC profile
-- In that single-secondary-VNIC design, Application Resources are not required unless the node exposes multiple selectable GVA VNIC profiles
-- Before sizing multiple GVA VNIC profiles on a node pool, confirm the selected shape supports enough VNIC attachments for the planned OCPU count: https://docs.oracle.com/en-us/iaas/Content/Compute/References/computeshapes.htm
+- If a node pool will attach multiple GVA VNIC profiles, verify that the selected compute shape and planned OCPU count allow enough VNIC attachments for that design: https://docs.oracle.com/en-us/iaas/Content/Compute/References/computeshapes.htm
 
 Application Resources are intended for:
 
@@ -60,13 +58,13 @@ In this design:
 - NADs define which host interface each pod interface should use
 - Do not use Multus network annotations together with pod-level Application Resource requests in the same pod spec, because that can create scheduling and interface-selection conflicts
 - Define the pod's primary interface through the default network selection and the associated NAD and IPAM configuration
-- See Section 9.5 for interface-specific selection using `deviceSelector` and `appResource`
+- Section 9.5 shows concrete NAD examples that pin `eth0` and `net1` to specific host interfaces and, when needed, use `deviceSelector.appResource` for per-interface VNIC selection
 - OCI and Kubernetes load balancer behavior follows the pod's primary interface
 - On some bare metal shapes, total network bandwidth can be distributed across multiple physical NICs, so multi-interface designs may also be used to align workload traffic with available NIC bandwidth
 
 ### 2.3 Behavior Without Application Resources
 
-If an Application Resource is not used, a pod that is already scheduled onto the node is not pinned to a single GVA VNIC profile and may be allocated from any secondary VNIC profile on that node that is available for pod IP allocation in the current node-pool configuration. Which profile is chosen is determined by the CNI and IPAM behavior for that node. This behavior is separate from taints, tolerations, and other scheduler placement controls.
+If an Application Resource is not used, a pod that is already scheduled onto the node is not pinned to a single GVA VNIC profile and may be allocated from any secondary VNIC profile on that node that is available for pod IP allocation in the current node-pool configuration. Unless the pod or NAD configuration explicitly constrains interface selection, treat that choice as implementation-specific rather than deterministic. This behavior is separate from taints, tolerations, and other scheduler placement controls.
 
 For single-secondary-VNIC designs used only to increase pod IP capacity or control per-node pod IP allocation, this is expected and does not require Application Resources.
 
@@ -75,19 +73,19 @@ For single-secondary-VNIC designs used only to increase pod IP capacity or contr
 Before enabling GVA, confirm the following:
 
 - The OKE cluster uses `OCI_VCN_IP_NATIVE` (VCN-Native CNI)
-- Multi-interface pod support with OCI VCN-Native CNI requires version `3.2.0` or later
+- Multi-interface pod support requires OCI VCN-Native CNI plugin version `3.2.0` or later
 - The required secondary subnets already exist
 - The required NSGs and route tables are defined for each traffic tier
 - The node shape supports the required number of VNIC attachments
 - The node pool has permission to create and manage VNICs
 - The OCI CLI version in use supports GVA flags
-- Pod subnets used with GVA are recommended to use two CIDR blocks when customers want to support more than 32 IPs per VNIC
+- Pod subnet capacity has been reviewed, including the two-CIDR recommendation in Section 5 for environments that need more than 32 IPs per VNIC
 - Multus CNI is deployed if multi-interface pods are required
 - The `ipvlan` CNI plugin is installed on worker nodes if Multus will attach secondary pod interfaces
 
-### 3.1 Required OCI CLI Version For LA
+### 3.1 Required OCI CLI Version For Limited Availability (LA)
 
-For LA environments covered by the source material, GVA requires the preview OCI CLI version `3.65.2+preview.1.1355`.
+For Limited Availability (LA) environments, GVA requires the preview OCI CLI version `3.65.2+preview.1.1355`.
 
 Install the preview version of the OCI CLI:
 
@@ -122,10 +120,10 @@ When a pod requests an Application Resource:
 
 ## 5. Limits And Validation Rules
 
-The source material consistently points to these constraints:
+Current constraints:
 
 - GVA requires `OCI_VCN_IP_NATIVE`
-- Pod subnets used for GVA are recommended to use two CIDR blocks when customers want to support more than 32 IPs per VNIC. Since the pod-subnet model moved to single-IP attachment from a single CIDR block, fragmentation is no longer the reason for this guidance
+- When customers need more than 32 IPs per VNIC, configure pod subnets with two CIDR blocks as a capacity-planning recommendation
 - Pods can request only one Application Resource type
 - Pods must request exactly `1` unit of that resource
 - `ipCount` currently supports a combined total of up to `256` pod IPs across all configured GVA secondary VNIC profiles on the node
@@ -145,10 +143,8 @@ When GVA is enabled on a node pool, the key settings are:
 | Parameter | Required | Notes |
 | --- | --- | --- |
 | `cniType` | Yes | Must be `OCI_VCN_IP_NATIVE` |
-| `networkLaunchType` | No | Defaults to `PARAVIRTUALIZED`; valid values are `PARAVIRTUALIZED` and `VFIO`, where `VFIO` corresponds to hardware-assisted SR-IOV networking |
+| `networkLaunchType` | No | Defaults to `PARAVIRTUALIZED`; valid values are `PARAVIRTUALIZED` and `VFIO`, where `VFIO` corresponds to hardware-assisted SR-IOV networking. Support depends on the selected compute shape and image, and some combinations support only `PARAVIRTUALIZED` |
 | `secondaryVnics` | Yes | Array of GVA VNIC definitions |
-
-`networkLaunchType` support depends on both the selected compute shape and the selected image. Some combinations support only `PARAVIRTUALIZED`.
 
 The CLI examples in this document show `--node-shape-config` for Flex shapes. Omit that flag for fixed shapes.
 
@@ -168,8 +164,6 @@ Each entry in `secondaryVnics` contains `createVnicDetails` with fields such as:
 | `freeformTags` | No | Standard OCI freeform tags |
 | `skipSourceDestCheck` | No | Enable only for routing or NAT cases |
 | `nicIndex` | No | Leave unset unless there is a specific placement need |
-
-Using two CIDR blocks on a pod subnet is recommended when customers want to support more than 32 IPs per VNIC, but it is no longer a hard requirement.
 
 ## 7. Example: Application Resource-Based Isolation
 
@@ -418,7 +412,7 @@ oci ce node-pool create \
   ]'
 ```
 
-In this model, Application Resources are not required because the node does not expose multiple selectable GVA VNIC profiles for workload pinning. `ipCount` increases pod IP capacity on the VNIC profile, but actual pod density on the node still depends on kubelet and workload limits.
+In this model, Application Resources are not required because the node does not expose multiple selectable GVA VNIC profiles for workload pinning. `ipCount` increases pod IP capacity on the VNIC profile, but actual pod density on the node still depends on kubelet `max-pods`, workload limits, and available subnet capacity.
 
 ## 9. Example: Multi-Interface Pods With GVA And Multus
 
@@ -586,6 +580,8 @@ The default OCI VCN-Native CNI binaries are installed automatically. The `ipvlan
 
 Recommended approach: install it with a node pool cloud-init script so it survives scaling and node replacement.
 
+Pin the `ipvlan` binary to a validated release rather than following a floating download path. The example below uses `v1.9.0`; align that version with the validated plugin set for the target environment.
+
 ```bash
 #!/bin/bash
 
@@ -613,9 +609,11 @@ sudo wget https://github.com/containernetworking/plugins/releases/download/v1.9.
 sudo tar xvzf cni-plugins-linux-amd64-v1.9.0.tgz -C /opt/cni/bin
 ```
 
+If worker nodes cannot reach GitHub, stage the tarball in OCI Object Storage or another internal mirror and replace the download URL in the cloud-init script and one-off install commands.
+
 ### 9.4 Identify Worker Node Interface Names
 
-The NADs must target the actual host interface names created by the attached VNICs. Verify them on a worker node:
+The NADs must target the actual host interface names created by the attached VNICs. Verify them on a worker node. In most OKE environments that means connecting through a bastion host or OCI Cloud Shell to the node's private IP rather than SSHing to a public IP:
 
 ```bash
 ifconfig
@@ -632,6 +630,8 @@ Example mapping:
 ### 9.5 Create NADs
 
 Use one NAD for the default pod network and one NAD for the additional interface.
+
+The NAD examples intentionally use different namespaces. `oci-vcn-native-network` is defined in `kube-system`, while `ipvlan-network` is defined in `default`. If the workload runs in another namespace, create `ipvlan-network` in that namespace or update the pod annotation to reference the fully qualified NAD name.
 
 Default network NAD pinned to `enp1s0`:
 
@@ -696,6 +696,8 @@ spec:
     }
 ```
 
+The default NAD uses the OCI-specific `oci-ipvlan` and `oci-ptp` plugins because that interface participates in the OKE VCN-Native default-network path. The additional NAD uses the standard `ipvlan` plugin because Multus is attaching an extra interface on a specific host NIC, while OCI IPAM still provides the subnet-aware IP allocation.
+
 `deviceSelector` can target interfaces with fields such as:
 
 ```json
@@ -731,8 +733,8 @@ This is also why the pod example sets:
 
 ```yaml
 annotations:
-  v1.multus-cni.io/default-network: oci-vcn-native-network
-  k8s.v1.cni.cncf.io/networks: ipvlan-network
+  v1.multus-cni.io/default-network: kube-system/oci-vcn-native-network
+  k8s.v1.cni.cncf.io/networks: default/ipvlan-network
 ```
 
 The `v1.multus-cni.io/default-network` annotation ensures `eth0` uses the `oci-vcn-native-network` NAD. Without explicitly selecting that default network, OCI IPAM can allocate from any eligible host interface, which makes the primary pod interface less predictable. Setting the default NAD ensures `eth0` uses the intended interface and keeps it isolated from the additional network attachment.
@@ -755,8 +757,8 @@ metadata:
   name: sleep-forever
   namespace: default
   annotations:
-    v1.multus-cni.io/default-network: oci-vcn-native-network
-    k8s.v1.cni.cncf.io/networks: ipvlan-network
+    v1.multus-cni.io/default-network: kube-system/oci-vcn-native-network
+    k8s.v1.cni.cncf.io/networks: default/ipvlan-network
 spec:
   containers:
     - name: sleeper
@@ -768,6 +770,8 @@ This pod uses:
 
 - `eth0` from the `oci-vcn-native-network` NAD
 - `net1` from the `ipvlan-network` NAD
+
+No pod-level Application Resource request or GVA taint toleration is needed in this example because interface selection is handled by the NAD configuration, and the example does not use pod-level Application Resource scheduling.
 
 Apply the manifest:
 
@@ -826,7 +830,7 @@ Common causes:
 - The `ipvlan` binary is missing from `/opt/cni/bin/ipvlan`
 - The cloud-init installation failed during node boot
 - The `deviceSelector.interfaceName` values in the NADs do not match the actual host interface names
-- The node cannot reach GitHub or the required download source during plugin installation
+- The node cannot reach GitHub or the required download source during plugin installation; if that path is restricted, use the pre-staged Object Storage or internal-mirror approach described in Section 9.3
 
 Helpful checks:
 
