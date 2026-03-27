@@ -19,11 +19,14 @@ GVA is most useful when you need:
 
 Choose the design first, because the configuration model is different depending on whether the pod needs one network path or multiple interfaces.
 
-### 2.1 Single-Interface Workload Isolation
+### 2.1 Single-Interface Workloads
 
-Use GVA with Application Resources when a node pool exposes multiple selectable secondary VNIC profiles and a pod should run on exactly one selected profile enforced by scheduling.
+Section 2.1 covers two single-interface patterns:
 
-Application Resources are mainly needed when multiple secondary VNIC profiles are attached to the same node and workloads must be pinned to one selected profile. Each pod can request only one Application Resource.
+- Single-interface workload isolation across multiple selectable secondary VNIC profiles by using Application Resources
+- Single secondary VNIC designs used to increase `ipCount` and support more than 32 pods per node without Application Resources
+
+Use Application Resources when a node pool exposes multiple selectable secondary VNIC profiles and a pod should run on exactly one selected profile enforced by scheduling. Application Resources are mainly needed when multiple secondary VNIC profiles are attached to the same node and workloads must be pinned to one selected profile. Each pod can request only one Application Resource.
 
 If the use case does not require multiple secondary VNIC profiles, such as using a single secondary VNIC to run more than 32 pods per worker node or to control how many IP addresses are assigned to pod networking on that node, Application Resources are not required. In this model, pod IP capacity is sized through one GVA VNIC profile and supports up to 256 pod IPs.
 
