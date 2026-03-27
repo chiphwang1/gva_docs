@@ -29,6 +29,14 @@ Use Application Resources when a node pool exposes multiple selectable secondary
 
 If the use case does not require multiple secondary VNIC profiles, such as using a single secondary VNIC to increase pod IP capacity on a worker node or to control how many IP addresses are assigned to pod networking on that node, Application Resources are not required. In this model, pod IP capacity is sized through one GVA VNIC profile and supports up to 256 pod IPs. Actual schedulable pod count also depends on kubelet `max-pods`, daemonsets, `hostNetwork` pods, and other node-level limits.
 
+Design notes for single-interface workloads:
+
+- GVA gives operators more control over how many IP addresses are assigned to pod networking on each worker node by sizing `ipCount` per secondary VNIC profile
+- Application Resources are for selecting one profile from multiple secondary VNIC profiles on a node
+- A common single-path design is one secondary VNIC with one pod interface, used to raise per-node pod IP capacity by sizing one GVA VNIC profile up to 256 pod IPs
+- In that single-secondary-VNIC design, Application Resources are not required unless the node exposes multiple selectable GVA VNIC profiles
+- Before sizing multiple GVA VNIC profiles on a node pool, confirm the selected shape supports enough VNIC attachments for the planned OCPU count
+
 Application Resources are intended for:
 
 - Pinning a workload type to a specific VNIC profile
@@ -45,6 +53,8 @@ In this design:
 - Multus attaches multiple pod interfaces
 - NADs define which host interface each pod interface should use
 - Application Resources should not be used, because they pin the pod to a single selected VNIC profile on the node
+- When multiple interfaces are exposed through NADs without Application Resource pinning, the primary interface depends on IPAM behavior
+- OCI and Kubernetes load balancer behavior follows the pod's primary interface
 
 ### 2.3 Behavior Without Application Resources
 
@@ -118,15 +128,8 @@ The source material consistently points to these constraints:
 - Instance shape limits still cap the number of VNIC attachments. The number of VNICs available on an instance is determined by the compute shape and, for flexible shapes, scales with the number of OCPUs configured on the node
 - Standard subnet capacity and NSG limits still apply
 
-Additional design notes:
+Capacity planning note:
 
-- GVA gives operators more control over how many IP addresses are assigned to pod networking on each worker node by sizing `ipCount` per secondary VNIC profile
-- Application Resources are for selecting one profile from multiple secondary VNIC profiles on a node, not for attaching multiple pod interfaces
-- A common single-path design is one secondary VNIC with one pod interface, used to raise per-node pod IP capacity by sizing one GVA VNIC profile up to 256 pod IPs
-- In that single-secondary-VNIC design, Application Resources are not required unless the node exposes multiple selectable GVA VNIC profiles
-- Before sizing multiple GVA VNIC profiles on a node pool, confirm the selected shape supports enough VNIC attachments for the planned OCPU count
-- When multiple interfaces are exposed through NADs without Application Resource pinning, the primary interface depends on IPAM behavior
-- OCI and Kubernetes load balancer behavior follows the pod's primary interface
 - GVA is a configured-capacity model. Size `ipCount` with operational headroom and confirm that node shape, kubelet `max-pods`, and subnet capacity still fit
 
 ## 6. Node Pool Configuration
