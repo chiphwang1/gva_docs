@@ -123,7 +123,7 @@ When a pod requests an Application Resource:
 Current constraints:
 
 - GVA requires `OCI_VCN_IP_NATIVE`
-- When customers need more than 32 IPs per VNIC, configure pod subnets with two CIDR blocks as a capacity-planning recommendation
+- When customers need more than 32 IPs per VNIC, configure pod subnets with two CIDR blocks as a capacity-planning recommendation, but it is not a hard requirement
 - Pods can request only one Application Resource type
 - Pods must request exactly `1` unit of that resource
 - `ipCount` currently supports a combined total of up to `256` pod IPs across all configured GVA secondary VNIC profiles on the node
