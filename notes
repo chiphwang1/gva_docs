@@ -1,0 +1,41 @@
+Meeting assets for Zoom meeting invitation are ready!
+
+Meeting summary
+
+Quick recap
+
+The meeting focused on aligning best practices for GVA configuration across different use cases, including multi-home pods and VNIC interface selection. The team discussed how application resources work with VNICs, clarifying that customers can only select one VNIC per application resource and that this feature is primarily used for segregating pod traffic or applying different security policies. They explored the relationship between application resources and network attachment definitions (NADs), determining that NADs with multiple interfaces allow customers to control which VNICs pods connect to using NAT, while application resources define a single primary VNIC for each pod. The discussion also covered how load balancers interact with these configurations, confirming that load balancers point to the primary VNIC as defined in the node pool or through IPAM settings.
+
+Next steps
+
+Chiping: Create documentation combining best practices for GVA, flex cider, and multi-home pod configurations, and send for review to Trung and Sohan later this week.
+Trung: Review the documentation sent by Chiping when received.
+Summary
+
+GVA Configuration Best Practices Discussion
+
+The team discussed best practices for GVA configuration across different use cases. Trung expressed concerns about customers potentially getting confused by the two-sided block subnet configuration. Chiping and Trung agreed that the current ability to select specific VNICs works well, though the discussion was cut off before reaching concrete recommendations for different use cases. Sohan joined the call late but confirmed his presence after being paged.
+
+AppResource Use Cases Discussion
+
+The team discussed the use cases for AppResource, which is used when customers need to target specific port scheduling or segregate pod traffic across different subnets. Sohan explained that AppResource allows for different security policies and route tables to be applied to different pods, particularly useful for dev and prod environments with different network configurations. The discussion clarified that load balancers work independently of AppResource, with Kubernetes services directing traffic to the appropriate VNIC interfaces based on the configuration.
+
+Node Pool Configuration Options Discussion
+
+Trung explained that customers can choose different node pool configurations, including complex setups with multiple VNICs and dedicated purposes, while the current solution allows customers to specify which VNICs different pod types should use. Chiping asked about supporting multiple application resources, to which Trung confirmed it was technically possible but noted it wasn't the current approach. Trung clarified that the current solution uses NADs to route pods to specific interfaces, which was presented as an alternative design to the discussed approach.
+
+VNIC Application Resources Discussion
+
+Trung explained that application resources can be used when working with a single VNIC, but when multiple VNICs are needed, application resources are not recommended. For limited VNIC usage, they suggested using multis and controlling them through NAT. Trung also mentioned that network attachment definitions offer an option to use application resources.
+
+Primary VNIC Determination in NADs
+
+The team discussed how to determine the primary VNIC when using multiple interfaces with NADs. Sohan confirmed that when using application resources with multi-secondary networks, the specified app resource becomes the primary interface. When no application resource is defined but multiple interfaces are exposed, Trung explained that the IPAM would determine the primary VNIC, though this could lead to potential configuration issues that required enhancing the OCI IPAM. The discussion concluded with Trung clarifying that when creating a node pool, the first VNIC defined in the node pool body would always be the primary interface.
+
+Primary VNIC Configuration Discussion
+
+Trung and Chiping discussed the configuration of primary VNICs in their system. They clarified that while any VNIC can be designated as the primary, it is defined through multis and affects both the Kubernetes pod object's IP field and load balancer settings. Sohan joined the conversation to ask about pod backend support, to which Trung confirmed it's possible but not directly supported through Kubernetes service definitions, requiring manual configuration using a new node backend allocation feature developed by the CCM team.
+
+GVA Documentation Planning Meeting
+
+Chiping announced plans to create documentation covering GVA, flex cider, and multi-home pods, which will be sent to Trung and Sohan for review later in the week. The documentation aims to address common customer questions about these features. Trung mentioned trying to locate the node port field, which Chiping confirmed is a valid feature.
