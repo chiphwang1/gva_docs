@@ -4,6 +4,8 @@
 
 Generic VNIC Attachment (GVA) is an OKE networking capability for VCN-Native pod networking that lets a node pool attach multiple secondary VNIC profiles with different subnet, NSG, and IP allocation settings.
 
+GVA is not currently supported with Flannel.
+
 GVA is most useful when you need:
 
 - Pod traffic isolation by subnet or NSG
@@ -82,8 +84,6 @@ Before enabling GVA, confirm the following:
 - Pod subnets used with GVA are recommended to use two CIDR blocks when customers want to support more than 32 IPs per VNIC
 - Multus CNI is deployed if multi-interface pods are required
 - The `ipvlan` CNI plugin is installed on worker nodes if Multus will attach secondary pod interfaces
-
-GVA is not supported with Flannel.
 
 ### 3.1 Required OCI CLI Version For LA
 
