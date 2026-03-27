@@ -165,6 +165,8 @@ Each entry in `secondaryVnics` contains `createVnicDetails` with fields such as:
 | `skipSourceDestCheck` | No | Enable only for routing or NAT cases |
 | `nicIndex` | No | Leave unset unless there is a specific placement need |
 
+Any subnet used for pod IP allocation by a GVA secondary VNIC must satisfy the minimum two-CIDR-block requirement.
+
 ## 7. Example: Application Resource-Based Isolation
 
 This example shows a node pool with separate frontend and backend VNIC profiles that workloads can request through Application Resources.
@@ -419,7 +421,6 @@ When creating the node pool for multi-interface pods:
 - Configure `cniType` as `OCI_VCN_IP_NATIVE`
 - Attach at least two secondary VNICs on distinct subnets
 - Leave `applicationResources` unset on the secondary VNICs
-- Ensure the subnets intended for pod IP assignment satisfy the minimum two-CIDR-block requirement
 - Decide which interface should be primary before combining GVA with NAD-based multi-interface patterns
 
 Diagram:
