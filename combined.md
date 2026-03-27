@@ -35,7 +35,7 @@ Design notes for single-interface workloads:
 - Application Resources are for selecting one profile from multiple secondary VNIC profiles on a node
 - A common single-path design is one secondary VNIC with one pod interface, used to raise per-node pod IP capacity by sizing one GVA VNIC profile up to 256 pod IPs
 - In that single-secondary-VNIC design, Application Resources are not required unless the node exposes multiple selectable GVA VNIC profiles
-- Before sizing multiple GVA VNIC profiles on a node pool, confirm the selected shape supports enough VNIC attachments for the planned OCPU count
+- Before sizing multiple GVA VNIC profiles on a node pool, confirm the selected shape supports enough VNIC attachments for the planned OCPU count: https://docs.oracle.com/en-us/iaas/Content/Compute/References/computeshapes.htm
 
 Application Resources are intended for:
 
