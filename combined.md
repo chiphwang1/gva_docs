@@ -793,7 +793,3 @@ kubectl describe pod -l app=multus -n kube-system
 kubectl logs -l app=multus -n kube-system
 sudo cat /var/log/cloud-init-output.log | grep -A5 "CNI"
 ```
-
-## 11. Publishing Note
-
-The source document references preview OCI CLI support for GVA and includes internal placeholder installation instructions. Keep the CLI requirement in the runbook, but replace internal-only distribution details before publishing externally.
