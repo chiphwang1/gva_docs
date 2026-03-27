@@ -266,8 +266,6 @@ oci ce node-pool create \
   ]'
 ```
 
-Include `--node-shape-config` for Flex shapes. For fixed shapes, omit that flag.
-
 Nodes created with Application Resources expose extended resources in the form:
 
 ```text
@@ -403,8 +401,6 @@ oci ce node-pool create \
   ]'
 ```
 
-Include `--node-shape-config` for Flex shapes. For fixed shapes, omit that flag.
-
 In this model, Application Resources are not required because the node does not expose multiple selectable GVA VNIC profiles for workload pinning.
 
 ## 9. Example: Multi-Interface Pods With GVA And Multus
@@ -527,8 +523,6 @@ oci ce node-pool create \
     }
   ]'
 ```
-
-Include `--node-shape-config` for Flex shapes. For fixed shapes, omit that flag.
 
 Enable `skipSourceDestCheck` only for routing or NAT use cases. It is not required for the baseline multi-interface pod networking example shown here.
 
