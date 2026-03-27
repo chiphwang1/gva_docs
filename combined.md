@@ -53,7 +53,7 @@ In this design:
 - Multus attaches multiple pod interfaces
 - NADs define which host interface each pod interface should use
 - Application Resources should not be used, because they pin the pod to a single selected VNIC profile on the node
-- When multiple interfaces are exposed through NADs without Application Resource pinning, the primary interface depends on IPAM behavior
+- Define the pod's primary interface through the default network selection and the associated NAD and IPAM configuration
 - OCI and Kubernetes load balancer behavior follows the pod's primary interface
 
 ### 2.3 Behavior Without Application Resources
