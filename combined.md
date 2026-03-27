@@ -97,8 +97,6 @@ If the Python wheel is already downloaded:
 pip install /path/to/oci_cli-3.65.2+preview.1.1355-py3-none-any.whl
 ```
 
-This LA-specific requirement comes from the source Word documents and should be replaced with public OCI CLI installation guidance and a generally supported minimum version before external publication.
-
 ## 4. Core Concepts
 
 ### 4.1 VNIC Roles
