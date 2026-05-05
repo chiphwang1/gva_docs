@@ -584,6 +584,7 @@ Pin the `ipvlan` binary to a validated release rather than following a floating 
 
 ```bash
 #!/bin/bash
+set -euo pipefail
 
 CNI_VERSION="v1.9.0"
 CNI_ARCH="amd64"
@@ -591,9 +592,11 @@ CNI_TARBALL="cni-plugins-linux-${CNI_ARCH}-${CNI_VERSION}.tgz"
 CNI_URL="https://github.com/containernetworking/plugins/releases/download/${CNI_VERSION}/${CNI_TARBALL}"
 CNI_BIN_DIR="/opt/cni/bin"
 
-wget --fail -O "/tmp/${CNI_TARBALL}" "${CNI_URL}" && \
-  tar xvzf "/tmp/${CNI_TARBALL}" -C "${CNI_BIN_DIR}" && \
-  rm -f "/tmp/${CNI_TARBALL}"
+mkdir -p "${CNI_BIN_DIR}"
+
+curl --fail --location --show-error --output "/tmp/${CNI_TARBALL}" "${CNI_URL}"
+tar xvzf "/tmp/${CNI_TARBALL}" -C "${CNI_BIN_DIR}"
+rm -f "/tmp/${CNI_TARBALL}"
 
 curl --fail -H "Authorization: Bearer Oracle" -L0 \
   http://169.254.169.254/opc/v2/instance/metadata/oke_init_script \
